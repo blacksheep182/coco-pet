@@ -1,0 +1,15 @@
+html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: transparent; }
+body { user-select: none; }
+video, canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+video { opacity: 0; pointer-events: none; }
+canvas { transform-origin: 50% 82%; }
+canvas.grabbed { transform: scale(0.96, 1.06); }
+canvas.flying { animation: coco-flight 420ms ease-in-out infinite alternate; }
+@keyframes coco-flight {
+  from { transform: rotate(-3deg) scale(0.97, 1.04); }
+  to { transform: rotate(3deg) scale(1.03, 0.97); }
+}
+@media (prefers-reduced-motion: reduce) {
+  canvas.grabbed { transform: none; }
+  canvas.flying { animation: none; }
+}

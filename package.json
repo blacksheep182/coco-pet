@@ -1,0 +1,30 @@
+{
+  "name": "coco-pet",
+  "productName": "CoCo Pet",
+  "version": "0.1.0",
+  "private": true,
+  "description": "小络桌宠 · 独立桌面版",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/*.test.js",
+    "build": "electron-builder --win zip --x64 --publish never"
+  },
+  "devDependencies": {
+    "electron": "34.5.8",
+    "electron-builder": "26.0.12"
+  },
+  "overrides": {
+    "extract-zip": { "yauzl": "3.4.0" }
+  },
+  "build": {
+    "appId": "com.netlive.coco.pet",
+    "artifactName": "CoCo-Pet-${version}-win-${arch}.${ext}",
+    "files": ["main.js", "lib/**/*", "assets/**/*"],
+    "asarUnpack": ["assets/coco-pet/*.webm"],
+    "win": {
+      "executableName": "CoCo",
+      "icon": "build/icon.ico"
+    }
+  }
+}

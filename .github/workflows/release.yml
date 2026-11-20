@@ -1,0 +1,37 @@
+name: Windows portable release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Check version
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          if ($env:GITHUB_REF_NAME -ne "v$version") { throw "Expected tag v$version" }
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - name: Publish portable ZIP
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          $zip = Get-Item dist/CoCo-Pet-*-win-x64.zip
+          $assets = gh release view $env:GITHUB_REF_NAME --repo $env:GITHUB_REPOSITORY --json assets --jq '.assets[].name' 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            if ($zip.Name -notin $assets) {
+              gh release upload $env:GITHUB_REF_NAME $zip.FullName --repo $env:GITHUB_REPOSITORY
+            }
+          } else {
+            gh release create $env:GITHUB_REF_NAME $zip.FullName --repo $env:GITHUB_REPOSITORY --verify-tag --title "CoCo Pet $env:GITHUB_REF_NAME" --notes "Windows x64。解压后双击 CoCo.exe 启动小络。"
+          }
