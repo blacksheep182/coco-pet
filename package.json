@@ -1,7 +1,7 @@
 {
   "name": "coco-pet",
   "productName": "CoCo Pet",
-  "version": "0.1.0",
+  "version": "0.2.4",
   "private": true,
   "description": "小络桌宠 · 独立桌面版",
   "main": "main.js",

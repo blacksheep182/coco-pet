@@ -259,12 +259,15 @@ test('a delayed drag-end cannot release a newer grab, and interrupting movement 
   assert.deepEqual(JSON.parse(fs.readFileSync(path.join(dir, 'coco-pet-position.json'))).position, { x: 160, y: 320 });
 });
 
-test('automatic roaming also preserves the intended window dimensions', async () => {
+test('automatic roaming pushes off before travelling and preserves the window dimensions', (t) => {
+  t.mock.timers.enable({ apis: ['setInterval', 'Date'] });
   const f = fixture(fs.mkdtempSync(path.join(os.tmpdir(), 'coco-'))); f.pet.setEnabled(true);
   const w = f.windows[0], sender = senderOf(w);
   try {
     f.ipcMain.emit('coco-pet:run', sender);
-    await new Promise(resolve => setTimeout(resolve, 100));
+    t.mock.timers.tick(80);
+    assert.equal(w.moves?.length || 0, 0, 'feet settle before the first push');
+    t.mock.timers.tick(280);
     assert.ok(w.moves?.length, 'roaming should change position');
     for (const move of w.moves) {
       assert.equal(move.width, 384);
@@ -286,6 +289,9 @@ test('tight work areas keep automatic roaming on the current monitor', (t) => {
   f.ipcMain.emit('coco-pet:run', senderOf(w));
   t.mock.timers.tick(3100);
   assert.deepEqual(w.xy, [116, 100]);
+  assert.deepEqual(w.webContents.sent.at(-1), ['coco-pet:run-direction', 'right']);
+  f.ipcMain.emit('coco-pet:run', senderOf(w));
+  assert.deepEqual(w.webContents.sent.at(-1), ['coco-pet:run-direction', 'left']);
 });
 
 test('a flick continues after release, and grabbing or hiding stops its physics', (t) => {

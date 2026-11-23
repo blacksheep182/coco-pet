@@ -12,7 +12,9 @@ test('keeps the last visible frame through decoder errors and retries the workin
   const windowEvents = {};
   const listeners = {};
   const scheduled = [];
+  let setRunDirection, mirroredFrames = 0;
   const displayContext = {
+    save() {}, restore() {}, translate() {}, scale(x) { if (x === -1) mirroredFrames++; },
     clearRect() { cleared++; },
     drawImage() { if (failDraw) throw new Error('GPU reset'); drawn++; },
     getImageData() { return { data: new Uint8ClampedArray([0, 0, 0, pointerPixelAlpha]) }; },
@@ -33,6 +35,7 @@ test('keeps the last visible frame through decoder errors and retries the workin
   const window = {
     coco: {
       run() { runs++; }, onPlay(fn) { onPlay = fn; }, onActivity(fn) { onActivity = fn; },
+      onRunDirection(fn) { setRunDirection = fn; },
       onPhysics() {}, interactive(hit) { hitChanges.push(hit); }, menu() {}, dragStart() {}, dragEnd() {},
     },
     addEventListener(name, fn) { windowEvents[name] = fn; },
@@ -84,7 +87,9 @@ test('keeps the last visible frame through decoder errors and retries the workin
   assert.equal(runs, 1);
   assert.deepEqual(hitChanges, [false], 'a transparent pixel becomes click-through without moving the mouse');
   pointerPixelAlpha = 255;
+  setRunDirection('left');
   videoCallback();
+  assert.equal(mirroredFrames, 1);
   assert.equal(runs, 1);
   assert.deepEqual(hitChanges, [false, true], 'an opaque pixel restores input without moving the mouse');
 });
@@ -99,7 +104,7 @@ test('holds the current pose while dragging and only applies queued actions afte
   const media = { paused: false, ended: false, readyState: 4, videoWidth: 640, currentTime: 1,
     addEventListener() {}, play() { this.paused = false; return Promise.resolve(); },
     pause() { this.paused = true; }, requestVideoFrameCallback() { return 1; }, cancelVideoFrameCallback() {} };
-  const window = { coco: { run() {}, onPlay(fn) { onPlay = fn; }, onActivity(fn) { onActivity = fn; }, onPhysics(fn) { onPhysics = fn; },
+  const window = { coco: { run() {}, onRunDirection() {}, onPlay(fn) { onPlay = fn; }, onActivity(fn) { onActivity = fn; }, onPhysics(fn) { onPhysics = fn; },
     interactive() {}, menu() {}, dragStart(id) { starts++; dragId = id; }, dragEnd() { ends++; } }, addEventListener() {} };
   const context = { document: { getElementById: id => id === 'pet' ? canvas : media,
     createElement: () => ({ getContext: () => ctx }) }, window, Image: class {},

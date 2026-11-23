@@ -24,6 +24,7 @@ let lastHit = true;
 let mousePosition = null;
 let hasFrame = false;
 let runStarted = false;
+let runLeft = false;
 let framePending = false;
 let frameRequest = null;
 let frameUsesVideo = false;
@@ -53,11 +54,20 @@ function paintFrame() {
     // Replace pixels in one draw, including transparent pixels. Clearing first
     // would erase the fallback if drawImage itself fails during a GPU reset.
     ctx.globalCompositeOperation = 'copy';
-    ctx.drawImage(media, 0, 0, pet.width, pet.height);
+    if (current === 'run' && runLeft) {
+      ctx.save();
+      try {
+        ctx.translate(pet.width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(media, 0, 0, pet.width, pet.height);
+      } finally { ctx.restore(); }
+    } else {
+      ctx.drawImage(media, 0, 0, pet.width, pet.height);
+    }
     hasFrame = true;
     if (current === 'run' && !runStarted && !busy()) {
       runStarted = true;
-      window.coco.run();
+      window.coco.run(media.currentTime);
     }
     hitTest();
     retryDelay = 1000;
@@ -109,6 +119,7 @@ function play(name, retrying = false) {
   cancelFrame();
   current = name;
   runStarted = false;
+  runLeft = false;
   const version = ++playbackVersion;
   lastFrameAt = Date.now(); lastMediaTime = -1;
   media.loop = name === 'idle' || (name === 'work' && activity === 'working');
@@ -127,6 +138,7 @@ setInterval(() => {
   if (!busy() && Date.now() - lastFrameAt >= 8000) scheduleRetry(current);
 }, 3000);
 window.coco.onPlay(play);
+window.coco.onRunDirection(direction => { runLeft = direction === 'left'; });
 window.coco.onActivity(value => {
   if (!['idle', 'working', 'waiting'].includes(value) || value === activity) return;
   const previous = activity; activity = value;
